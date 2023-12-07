@@ -1,0 +1,167 @@
+!------------------------------------------------------------------------------
+!-- INITIALIZATION PARAMETER NAMELIST
+!-- Documentation: https://palm.muk.uni-hannover.de/trac/wiki/doc/app/inipar
+!------------------------------------------------------------------------------
+ &initialization_parameters
+!
+!-- model grid
+!--------------------------------------
+    nx = 49,
+    ny = 49,
+    nz = 50,  
+
+    dx = 10.0,
+    dy = 10.0,
+    dz = 10.0,
+
+    dz_stretch_level =300.0, dz_stretch_factor = 1.05, dz_max = 50.0, 
+
+
+!-- pressure solver
+!--------------------------------------
+!    fft_method =  'fftw',
+
+     psolver = 'multigrid',
+     cycle_mg  = 'w',
+     mg_cycles = 2,
+     mg_switch_to_pe0_level = -1,
+
+!
+!-- initial and boundary conditions
+!--------------------------------------
+    initializing_actions = 'set_constant_profiles',  
+    constant_flux_layer = .T.,
+    bc_ns = 'cyclic',
+    bc_lr = 'cyclic',     ! or 'dirichlet/radiation',                                                    
+!
+!-- wind speed
+!--------------------------------------
+     ug_surface = 3.0,
+     vg_surface = 0.0,
+!
+!-- temperature
+!--------------------------------------
+    pt_surface = 293.85,                                                   ! 293.85 for summer =20.7°C (derived from ERA 5) or 2.6°C = 275.75 K for winter
+    bc_pt_b    = 'dirichlet',
+
+   pt_vertical_gradient= 5.67, 1.25, 0.34, 0.25,                          
+   pt_vertical_gradient_level= 45.0, 95.0, 185.0, 2448.23, 3888.23,       
+!
+!-- humidity
+!--------------------------------------
+    q_vertical_gradient= 0.0005, 0.00017, -0.0000706, -0.0003, -0.000517, 0.00023, 0.000149, -0.000064,
+    q_vertical_gradient_level=45, 155, 275, 405, 565, 1599.305, 1630.02, 2448.23, 3888.23,
+    humidity   = .T.,
+    q_surface  = 0.007,                                                   ! summer 0.007, winter 0.004
+    bc_q_b     = 'dirichlet',
+!
+!-- time
+!--------------------------------------
+
+    origin_date_time     = '2022-07-22 00:00:00 +00',                     ! winter  '2022-01-13 00:00:00 +00',
+!
+!-- wall/soil spinup
+!--------------------------------------
+      spinup_time         = 259200,                                       ! 3days wall/soil spinup
+      spinup_pt_mean      = 293.85,                                       ! ERA5 data summer: 293.85 K or winter : 275.75 K 
+      spinup_pt_amplitude = 5.4,                                          ! 5.4 for summer and 2.4 for winter                    
+      data_output_during_spinup = .F.,                                    ! set .T. if you want output
+!
+!-- building topology
+!--------------------------------------
+    topography = 'read_from_file', 
+
+/
+!------------------------------------------------------------------------------
+!-- RUNTIME PARAMETER NAMELIST
+!-- Documentation: https://palm.muk.uni-hannover.de/trac/wiki/doc/app/d3par
+!------------------------------------------------------------------------------
+ &runtime_parameters!-- profile output
+!--------------------------------------
+    skip_time_dopr        =   0.0,
+    dt_dopr               =  3600.0,  
+    averaging_interval_pr =  3600.0,
+    dt_averaging_input_pr =  60.0,
+!
+!-- run time
+!--------------------------------------
+    end_time                = 604800,                                                  
+    termination_time_needed =  600.0,
+!
+!-- processor topology
+!--------------------------------------
+    npex = 10,
+    npey = 5,
+!
+!-- 2d/3d output
+!--------------------------------------
+    do3d_at_begin         = .T.,
+    do2d_at_begin         = .T.,
+    dt_data_output        = 3600.0, 
+    dt_data_output_av     = 3600.0,
+    dt_do2d_xy            = 3600.0,
+    section_xy            = 0,1,2,3,     
+    averaging_interval    = 3600.0,
+
+
+    data_output = 'theta', 'q', 'u', 'v', 'w','rh','hr',
+                   't_soil', 'm_soil','ta',                  
+                   'tsurf*_xy', 'shf*_xy', 'qsws*_xy', 'ghf*_xy',
+                   'rad_net*_xy', 't*_xy', 
+                   'theta_av', 'q_av', 'u_av', 'v_av', 'w_av','e_av',
+                   'tsurf*_xy_av', 'shf*_xy_av', 'qsws*_xy_av', 'ghf*_xy_av', 
+!
+! Masked output (here for first layer above gound)
+   mask_k_over_surface(1,:) = 1,          
+   dt_domask        = 60.,                
+   data_output_masks(1,:) = 'u', 'v',
+!
+!-- timeseries output
+!--------------------------------------
+    dt_run_control =   0.0,
+    dt_dots        =   3600.0,
+!
+!-- profile output
+!--------------------------------------
+    skip_time_dopr        =   0.0,
+    dt_dopr               =  3600.0, 
+    averaging_interval_pr =  3600.0, 
+    dt_averaging_input_pr =  20.0,
+
+    data_output_pr =  'theta','wtheta', 'theta*2', 'rh', 't_soil', 'm_soil',
+
+ /
+!
+!
+!-------------------------------------------------------------------------------
+!-- RADIATION MODEL PARAMETER NAMELIST
+!   Documentation: https://palm.muk.uni-hannover.de/trac/wiki/doc/app/radpar
+!-------------------------------------------------------------------------------
+ &radiation_parameters
+   radiation_scheme =  'clear-sky',    
+   dt_radiation     = 60.0,
+   albedo_type      =  17,                         ! 17 for bare soil, 5 for short grass and 10 for tall grass
+   constant_albedo  = .T.,
+   surface_reflections = .T.,
+   nrefsteps = 5,                     
+   raytrace_mpi_rma = .T.,             
+
+ / ! end of radiation_parameters namelist
+!------------------------------------------------------------------------------
+!-- LAND SURFACE MODEL PARAMETER NAMELIST
+!   Documentation: https://palm.muk.uni-hannover.de/trac/wiki/doc/app/lsmpar
+!------------------------------------------------------------------------------
+ &land_surface_parameters
+    vegetation_type = 1,     			  ! 1 is bare soil, 3 is short grass, 8 is tall grass
+    soil_type       = 3,    
+
+
+    root_fraction = 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+    soil_moisture = 0.3, 0.3, 0.3, 0.3, 0.3, 0.3, 0.3, 0.3,
+    soil_temperature = 291.059, 291.952, 293.597, 295.774, 298.321, 297.896, 296.982, 294.815,   !default for summer, and   !273.925, 274.256, 274.87, 275.719, 276.904, 277.764, 279.632, 285.651,  is default for winter   
+    deep_soil_temperature = 294.815,    !winter default is 285.651=12.5°C        !summer default is 294.815= 21.665°C  
+
+    aero_resist_kray       = .F.,    
+    constant_roughness     = .T.,
+    conserve_water_content = .T.,
+ / ! end of land_surface_parameters namelist
